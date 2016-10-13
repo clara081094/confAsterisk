@@ -1,0 +1,61 @@
+[general]
+static=yes
+ 
+[extensiones-internas]
+; Extensiones internas SIP
+exten => _XX,1,Dial(SIP/${EXTEN})
+exten => _XX,n,Hangup(16)
+
+;GRABAR OPCIONES
+exten => _66XX,1,Answer()
+exten => _66XX,n,Wait(2)
+exten => _66XX,n,Record(en/prueba${EXTEN:2}.gsm,0,10)
+exten => _66XX,n,Wait(2)
+exten => _66XX,n,Playback(en/prueba${EXTEN:2})
+exten => _66XX,n,Wait(2)
+exten => _66XX,n,Hangup()
+
+[extensiones-conferencia]
+include => extensiones-internas
+exten => 69,1,Progress()
+exten => 69,2,Wait(1)
+exten => 69,3,ConfBridge(1,default_bridge,default_user)
+
+exten => 96,1,Progress()
+exten => 96,2,Wait(1)
+exten => 96,3,ConfBridge(1,default_bridge,admin_user)
+
+[trunk-incoming]
+
+exten => _XX,1,Dial(SIP/${EXTEN})
+exten => _XX,n,Hangup(16)
+
+exten => s,1,Answer()
+exten => s,2,Background(/var/lib/asterisk/sounds/ivr_promt_user)
+exten => s,3,DIAL(SIP/10)
+exten => s,4,Hangup()                                                    
+
+
+exten => 20,1,DIAL(SIP/20)
+exten => 20,2,Hangup()
+
+;Incoming 
+
+[dongle-incoming]
+include => trunk-incoming
+
+
+exten => sms,1,Verbose(Incoming SMS from ${CALLERID(num)} ${BASE64_DECODE(${SMS_BASE64})}) 
+exten => sms,n,System(echo ‘${STRFTIME(${EPOCH},,%Y-%m-%d %H:%M:%S)} – ${DONGLENAME} – ${CALLERID(num)}: ${BASE64_DECODE(${SMS_BASE64})}’ >> /var/log/asterisk/sms.txt)
+exten => sms,n,Hangup() 
+
+exten => ussd,1,Noop(Incoming USSD: ${BASE64_DECODE(${USSD_BASE64})}) 
+exten => ussd,n,System(echo '${STRFTIME(${EPOCH},,%Y-%m-%d %H:%M:%S)} - ${DONGLENAME}: ${BASE64_DECODE(${USSD_BASE64})}' >> /var/log/asterisk/ussd.txt) 
+exten => ussd,n,Hangup() 
+
+[pstn-incoming]
+include => trunk-incoming
+
+[dongle-outgoing]
+exten => s,1,Dial(Dongle/dongle0/${EXTEN})
+same => n,Hangup(1)

@@ -1,0 +1,10 @@
+[general]
+#include vm_general.inc
+#include vm_email.in
+attach=yes
+format=wav
+
+[buzon]
+21 => 21,21,rep1@buzon
+22 => 22,22,phoneStudio@irfsac.com
+
